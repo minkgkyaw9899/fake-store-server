@@ -1,0 +1,15 @@
+### get products
+
+GET http://localhost:8000/api/products http:1.1
+
+### create products
+POST http://localhost:8000/api/products http:1.1
+
+{
+  'content-type': application/json
+}
+
+{
+  title: "Tested New Product",
+  
+}

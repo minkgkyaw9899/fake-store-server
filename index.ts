@@ -333,7 +333,7 @@ app.get("/api/users", authenticateJWT, (req, res) => {
 // create new user
 app.post("/api/users", (req, res, next) => {
   try {
-    const { email, username, password, phone, name, address } = req.body;
+    const { email, username, password, phone, firstname, lastname, } = req.body;
 
     const newUser = {
       id: db.users.length ? db.users.length + 1 : 1,
@@ -341,8 +341,20 @@ app.post("/api/users", (req, res, next) => {
       username,
       password,
       phone,
-      name,
-      address,
+      name: {
+        firstname,
+        lastname
+      },
+      address: {
+        "geolocation": {
+          "lat": "-37.3159",
+          "long": "81.1496"
+        },
+        "city": "kilcoole",
+        "street": "Lovers Ln",
+        "number": 7267,
+        "zipcode": "12926-3874"
+      },
     };
 
     db.users.push(newUser);

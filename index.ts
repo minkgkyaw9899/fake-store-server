@@ -5,12 +5,16 @@ import express, {
   type Response,
 } from "express";
 import multer from "multer";
-import db from "./db/db.json";
+import db from "./db/db.json" with {type: 'json'};
 import createHttpError from "http-errors";
 import path from "path";
 import fs from "fs";
 import morgan from "morgan";
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const responseFormatter = <T>(status: number, message: string, data?: T) => {
   return {

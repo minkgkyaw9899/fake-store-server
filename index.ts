@@ -470,6 +470,36 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   return next(createHttpError(404));
 });
 
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  let primaryIp = 'localhost';
+
+
+  for (const name in interfaces) {
+    const networkInterface = interfaces[name];
+    if (!networkInterface) continue;
+    for (const iface of networkInterface) {
+      // 1. Skip internal addresses (like 127.0.0.1 and ::1)
+      if (iface.internal) continue; 
+      
+      // 2. Only look for IPv4 addresses
+      if (iface.family === 'IPv4') {
+        // 3. Prioritize common private network ranges for display
+        // This helps avoid virtual network IPs (e.g., from VPNs or Docker)
+        if (iface.address.startsWith('192.168.') || 
+            iface.address.startsWith('172.')) 
+        {
+            return iface.address; // Return immediately if a common LAN IP is found
+        }
+        
+        // Use the first valid IPv4 as a fallback if no common private range is found
+        primaryIp = iface.address;
+      }
+    }
+  }
+  return primaryIp; 
+}
+
 app.use(((err, req, res, next) => {
   const status = err.status || 500;
   const message = err.message || "Internal server error";
@@ -484,19 +514,8 @@ app.use(((err, req, res, next) => {
 }) as ErrorRequestHandler);
 
 const PORT = 8000;
-app.listen(PORT, '0.0.0.0', () => {
-  const interfaces = os.networkInterfaces();
-  let localIp = "localhost";
-
-    for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]!) {
-      // IPv4 & not internal (localhost)
-      if (iface.family === "IPv4" && !iface.internal) {
-        localIp = iface.address;
-        break;
-      }
-    }
-  }
+app.listen(PORT, () => {
+  const localIp = getLocalIp()
 
   consola.info(`Server running on http://localhost:${PORT} || http://${localIp}:${PORT}`)
 });

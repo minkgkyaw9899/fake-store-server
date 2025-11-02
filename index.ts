@@ -201,7 +201,7 @@ app.get("/api/products/category/:category", (req, res, next) => {
       limit: limitNumber,
       total: filteredProducts.length,
       totalPages,
-      data: paginatedProducts
+      products: paginatedProducts
     }));
   } catch (err) {
     return res.status(500).json(responseFormatter(500, "Server error"));
@@ -325,7 +325,7 @@ app.get("/api/users", authenticateJWT, (req, res) => {
       limit: limitNumber,
       total: db.users.length,
       totalPages,
-      data: paginatedUsers,
+      users: paginatedUsers,
     })
   );
 });

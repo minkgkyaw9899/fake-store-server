@@ -84,14 +84,14 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 // get all products
 app.get("/api/products", authenticateJWT, (req, res) => {
   try {
-    let { page = "1", limit = "10" } = req.query;
+    let { page = "1", limit = "5" } = req.query;
 
-    let pageNumber = parseInt(page as string, 10);
-    let limitNumber = parseInt(limit as string, 10);
+    let pageNumber = parseInt(page as string, 5);
+    let limitNumber = parseInt(limit as string, 5);
 
     // validation
     if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
-    if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 10;
+    if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
 
     const startIndex = (pageNumber - 1) * limitNumber;
     const endIndex = startIndex + limitNumber;
@@ -163,12 +163,51 @@ app.post(
   }
 );
 
-// get products/ categories
+// get categories
 app.get("/api/products/categories", authenticateJWT, (req, res, next) => {
   const categories = db.categories;
 
   return res.status(200).json(responseFormatter(200, "Success", categories));
 });
+
+// get product by category
+app.get("/api/products/category/:category", (req, res, next) => {
+  try {
+    const { category } = req.params;
+
+    if(!category) return next(createHttpError(400))
+    let { page = "1", limit = "5" } = req.query;
+
+    let pageNumber = parseInt(page as string, 5) || 1;
+    let limitNumber = parseInt(limit as string, 5) || 5;
+
+    if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
+    if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
+
+    // category filter
+    const filteredProducts = db.products.filter(
+      p => p.category.toLowerCase() === category.toLowerCase()
+    );
+
+    const startIndex = (pageNumber - 1) * limitNumber;
+    const endIndex = startIndex + limitNumber;
+
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(filteredProducts.length / limitNumber);
+
+    return res.status(200).json(responseFormatter(200, "Success", {
+      category,
+      page: pageNumber,
+      limit: limitNumber,
+      total: filteredProducts.length,
+      totalPages,
+      data: paginatedProducts
+    }));
+  } catch (err) {
+    return res.status(500).json(responseFormatter(500, "Server error"));
+  }
+});
+
 
 // update product by id
 app.patch(
@@ -267,12 +306,12 @@ app.get("/api/products/:id", authenticateJWT, (req, res, next) => {
 
 // get all users
 app.get("/api/users", authenticateJWT, (req, res) => {
-  const { page = "1", limit = "10" } = req.query;
-  let pageNumber = parseInt(page as string, 10);
-  let limitNumber = parseInt(limit as string, 10);
+  const { page = "1", limit = "5" } = req.query;
+  let pageNumber = parseInt(page as string, 5);
+  let limitNumber = parseInt(limit as string, 5);
 
   if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
-  if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 10;
+  if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
 
   const startIndex = (pageNumber - 1) * limitNumber;
   const endIndex = startIndex + limitNumber;

@@ -12,6 +12,8 @@ import fs from "fs";
 import morgan from "morgan";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { fileURLToPath } from "url";
+import os from "os";
+import consola from "consola";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,7 +39,6 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     var dateTimestamp = Date.now();
-    console.log("file", file);
     cb(
       null,
       file.fieldname +
@@ -123,8 +124,6 @@ app.post(
       const { title, price, description, category } = req.body;
 
       const imagePath = req.file ? req.file.path : null;
-
-      console.log("imagePath", imagePath);
 
       const randomRate = getRandomRating();
       const randomCount = Math.floor(Math.random() * 300) + 1;
@@ -433,4 +432,20 @@ app.use(((err, req, res, next) => {
   });
 }) as ErrorRequestHandler);
 
-app.listen(8000, () => console.log("Server listening on 8000"));
+const PORT = 8000;
+app.listen(PORT, '0.0.0.0', () => {
+  const interfaces = os.networkInterfaces();
+  let localIp = "localhost";
+
+    for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]!) {
+      // IPv4 & not internal (localhost)
+      if (iface.family === "IPv4" && !iface.internal) {
+        localIp = iface.address;
+        break;
+      }
+    }
+  }
+
+  consola.info(`Server running on http://localhost:${PORT} || http://${localIp}:${PORT}`)
+});

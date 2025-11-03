@@ -72,6 +72,7 @@ function changeRouteImageOnStartUp () {
         if(err) {
           consola.error('Error reset db', err)
         }
+        consola.info('Reset DB')
       });
 }
 
@@ -130,12 +131,16 @@ app.get("/api/products", authenticateJWT, (req, res) => {
   try {
     let { page = "1", limit = "5" } = req.query;
 
-    let pageNumber = parseInt(page as string, 5);
-    let limitNumber = parseInt(limit as string, 5);
+    let pageNumber = parseInt(page as string, 10);
+    let limitNumber = parseInt(limit as string, 10);
+
+    console.log('limitNumber', limitNumber)
 
     // validation
     if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
     if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
+
+    console.log('limitNumber', limitNumber)
 
     const startIndex = (pageNumber - 1) * limitNumber;
     const endIndex = startIndex + limitNumber;
@@ -222,8 +227,8 @@ app.get("/api/products/category/:category", (req, res, next) => {
     if(!category) return next(createHttpError(400))
     let { page = "1", limit = "5" } = req.query;
 
-    let pageNumber = parseInt(page as string, 5) || 1;
-    let limitNumber = parseInt(limit as string, 5) || 5;
+    let pageNumber = parseInt(page as string, 10) || 1;
+    let limitNumber = parseInt(limit as string, 10) || 5;
 
     if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
     if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
@@ -351,8 +356,8 @@ app.get("/api/products/:id", authenticateJWT, (req, res, next) => {
 // get all users
 app.get("/api/users", authenticateJWT, (req, res) => {
   const { page = "1", limit = "5" } = req.query;
-  let pageNumber = parseInt(page as string, 5);
-  let limitNumber = parseInt(limit as string, 5);
+  let pageNumber = parseInt(page as string, 10);
+  let limitNumber = parseInt(limit as string, 10);
 
   if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
   if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
@@ -529,5 +534,5 @@ app.use(((err, req, res, next) => {
 
 const PORT = 8000;
 app.listen(PORT, () => {
-  consola.info(`Server running on http://localhost:${PORT} || http://${localIp}:${PORT}`)
+  consola.success(`Server running on http://localhost:${PORT} || http://${localIp}:${PORT}`)
 });

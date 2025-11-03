@@ -131,23 +131,21 @@ app.use("/public", express.static(path.join(__dirname, "../public")));
 // get all products
 app.get("/api/products", authenticateJWT, (req, res) => {
   try {
-    let { page = "1", limit = "5" } = req.query;
+    let { page = "1", limit = "5", orderBy = "asc" } = req.query;
 
     let pageNumber = parseInt(page as string, 10);
     let limitNumber = parseInt(limit as string, 10);
-
-    console.log('limitNumber', limitNumber)
 
     // validation
     if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
     if (isNaN(limitNumber) || limitNumber < 1) limitNumber = 5;
 
-    console.log('limitNumber', limitNumber)
-
     const startIndex = (pageNumber - 1) * limitNumber;
     const endIndex = startIndex + limitNumber;
 
-    const paginatedProducts = db.products.slice(startIndex, endIndex);
+    const products = orderBy == 'dsc' ? db.products.reverse() : db.products;
+
+    const paginatedProducts = products.slice(startIndex, endIndex);
 
     const totalPages = Math.ceil(db.products.length / limitNumber);
 

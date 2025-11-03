@@ -6,6 +6,7 @@ import express, {
 } from "express";
 import multer from "multer";
 import db from "./db/db.json" with {type: 'json'};
+import backupDb from './db/backup.json' with {type: 'json'}
 import createHttpError from "http-errors";
 import path from "path";
 import fs from "fs";
@@ -14,7 +15,6 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
 import { fileURLToPath } from "url";
 import os from "os";
 import consola from "consola";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -32,6 +32,50 @@ function getRandomRating(min = 1, max = 5) {
   const rating = Math.random() * (max - min) + min;
   return Math.round(rating * 10) / 10;
 }
+
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  let primaryIp = 'localhost';
+
+
+  for (const name in interfaces) {
+    const networkInterface = interfaces[name];
+    if (!networkInterface) continue;
+    for (const iface of networkInterface) {
+      // 1. Skip internal addresses (like 127.0.0.1 and ::1)
+      if (iface.internal) continue; 
+      
+      // 2. Only look for IPv4 addresses
+      if (iface.family === 'IPv4') {
+        // 3. Prioritize common private network ranges for display
+        // This helps avoid virtual network IPs (e.g., from VPNs or Docker)
+        if (iface.address.startsWith('192.168.') || 
+            iface.address.startsWith('172.')) 
+        {
+            return iface.address; // Return immediately if a common LAN IP is found
+        }
+        
+        // Use the first valid IPv4 as a fallback if no common private range is found
+        primaryIp = iface.address;
+      }
+    }
+  }
+  return primaryIp; 
+}
+
+const localIp = getLocalIp();
+
+function changeRouteImageOnStartUp () {
+  const dbPath = path.join(__dirname, "./db/db.json");
+
+      fs.writeFile(dbPath, JSON.stringify(backupDb, null, 2), (err) => {
+        if(err) {
+          consola.error('Error reset db', err)
+        }
+      });
+}
+
+changeRouteImageOnStartUp()
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -133,7 +177,7 @@ app.post(
         price: +price,
         description,
         category,
-        image: imagePath ? `http://localhost:8000/${imagePath}` : "",
+        image: imagePath ? `http://${localIp}:8000/${imagePath}` : "",
         rating: {
           rate: randomRate,
           count: randomCount,
@@ -237,7 +281,7 @@ app.patch(
         db.products[productIndex].description = description;
       if (category !== undefined) db.products[productIndex].category = category;
       if (imagePath)
-        db.products[productIndex].image = `http://localhost:8000/${imagePath}`;
+        db.products[productIndex].image = `http://${localIp}:8000/${imagePath}`;
 
       const dbPath = path.join(__dirname, "./db/db.json");
       fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
@@ -470,36 +514,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   return next(createHttpError(404));
 });
 
-function getLocalIp() {
-  const interfaces = os.networkInterfaces();
-  let primaryIp = 'localhost';
-
-
-  for (const name in interfaces) {
-    const networkInterface = interfaces[name];
-    if (!networkInterface) continue;
-    for (const iface of networkInterface) {
-      // 1. Skip internal addresses (like 127.0.0.1 and ::1)
-      if (iface.internal) continue; 
-      
-      // 2. Only look for IPv4 addresses
-      if (iface.family === 'IPv4') {
-        // 3. Prioritize common private network ranges for display
-        // This helps avoid virtual network IPs (e.g., from VPNs or Docker)
-        if (iface.address.startsWith('192.168.') || 
-            iface.address.startsWith('172.')) 
-        {
-            return iface.address; // Return immediately if a common LAN IP is found
-        }
-        
-        // Use the first valid IPv4 as a fallback if no common private range is found
-        primaryIp = iface.address;
-      }
-    }
-  }
-  return primaryIp; 
-}
-
 app.use(((err, req, res, next) => {
   const status = err.status || 500;
   const message = err.message || "Internal server error";
@@ -515,7 +529,5 @@ app.use(((err, req, res, next) => {
 
 const PORT = 8000;
 app.listen(PORT, () => {
-  const localIp = getLocalIp()
-
   consola.info(`Server running on http://localhost:${PORT} || http://${localIp}:${PORT}`)
 });

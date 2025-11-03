@@ -18,6 +18,8 @@ import consola from "consola";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const dbPath = path.join(__dirname, "./db/db.json");
+
 const responseFormatter = <T>(status: number, message: string, data?: T) => {
   return {
     meta: {
@@ -66,7 +68,7 @@ function getLocalIp() {
 const localIp = getLocalIp();
 
 function changeRouteImageOnStartUp () {
-  const dbPath = path.join(__dirname, "./db/db.json");
+  
 
       fs.writeFile(dbPath, JSON.stringify(backupDb, null, 2), (err) => {
         if(err) {
@@ -124,7 +126,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use("/public", express.static(path.join(__dirname, "public")));
+app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // get all products
 app.get("/api/products", authenticateJWT, (req, res) => {
@@ -190,8 +192,6 @@ app.post(
       };
 
       db.products.push(newProducts);
-
-      const dbPath = path.join(__dirname, "./db/db.json");
 
       fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
         if (err) return next(createHttpError(400));
@@ -288,7 +288,6 @@ app.patch(
       if (imagePath)
         db.products[productIndex].image = `http://${localIp}:8000/${imagePath}`;
 
-      const dbPath = path.join(__dirname, "./db/db.json");
       fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
         if (err) return next(createHttpError(500, "Failed to save product"));
 
@@ -324,7 +323,6 @@ app.delete("/api/products/:id", authenticateJWT, (req, res, next) => {
     const removedProduct = db.products.splice(productIndex, 1)[0];
 
     // save to db.json
-    const dbPath = path.join(__dirname, "./db/db.json");
     fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
       if (err) return next(createHttpError(500, "Failed to delete product"));
 
@@ -408,7 +406,6 @@ app.post("/api/users", (req, res, next) => {
 
     db.users.push(newUser);
 
-    const dbPath = path.join(__dirname, "./db/db.json");
     fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
       if (err) return next(createHttpError(500, "Failed to save user"));
 
@@ -443,7 +440,6 @@ app.patch("/api/users/:id", authenticateJWT, (req, res, next) => {
     if (name !== undefined) user.name = { ...user.name, ...name };
     if (address !== undefined) user.address = { ...user.address, ...address };
 
-    const dbPath = path.join(__dirname, "./db/db.json");
     fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
       if (err) return next(createHttpError(500, "Failed to update user"));
       return res.status(200).json(responseFormatter(200, "User updated", user));
@@ -464,7 +460,6 @@ app.delete("/api/users/:id", authenticateJWT, (req, res, next) => {
 
     const removedUser = db.users.splice(index, 1)[0];
 
-    const dbPath = path.join(__dirname, "./db/db.json");
     fs.writeFile(dbPath, JSON.stringify(db, null, 2), "utf8", (err) => {
       if (err) return next(createHttpError(500, "Failed to delete user"));
       return res

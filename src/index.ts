@@ -126,6 +126,11 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=120, must-revalidate');
+  return next();
+})
+
 app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // get all products
